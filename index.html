@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ブランセうに短冊メーカー</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 720px;
+      margin: 40px auto;
+      padding: 0 16px;
+      line-height: 1.7;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 16px;
+      padding: 8px 10px;
+    }
+
+    .buttonArea {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    button {
+      padding: 8px 16px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .preview {
+      margin-top: 8px;
+      color: #555;
+    }
+
+    .copyStatus {
+      margin-top: 8px;
+      color: #555;
+      min-height: 1.7em;
+    }
+
+    pre {
+      margin-top: 24px;
+      padding: 16px;
+      background: #f6f6f6;
+      border-radius: 8px;
+      font-size: 20px;
+      line-height: 1.25;
+      overflow-x: auto;
+      white-space: pre;
+      font-family:
+        "MS Gothic",
+        "Yu Gothic",
+        "Hiragino Kaku Gothic ProN",
+        monospace;
+    }
+  </style>
+</head>
+<body>
+  <h1>ブランセうに短冊メーカー</h1>
+
+  <label for="wish">願いごと (「ように」は自動挿入されます)</label>
+  <input id="wish" type="text" value="入力例が伝わります" />
+
+  <div class="preview">
+    表示：<span id="formPreview">入力例が伝わりますように</span>
+  </div>
+
+  <div class="buttonArea">
+    <button id="makeButton" type="button">短冊を作る</button>
+    <button id="copyButton" type="button">コピーする</button>
+  </div>
+
+  <div id="copyStatus" class="copyStatus" aria-live="polite"></div>
+
+  <pre id="output"></pre>
+
+  <script>
+    const wishInput = document.getElementById("wish");
+    const formPreview = document.getElementById("formPreview");
+    const output = document.getElementById("output");
+    const makeButton = document.getElementById("makeButton");
+    const copyButton = document.getElementById("copyButton");
+    const copyStatus = document.getElementById("copyStatus");
+
+    function splitGraphemes(text) {
+      // 絵文字や濁点付き文字などをなるべく1文字として扱う
+      if (typeof Intl !== "undefined" && Intl.Segmenter) {
+        const segmenter = new Intl.Segmenter("ja", { granularity: "grapheme" });
+        return [...segmenter.segment(text)].map((segment) => segment.segment);
+      }
+
+      // フォールバック
+      return [...text];
+    }
+
+    function makeTanzaku(inputText) {
+      const chars = splitGraphemes(inputText.trim());
+
+      // 末尾の「ように」のうち、
+      // 「よ」は右列の最後、「うに」は左列の先頭に置く
+      const rightColumn = [...chars, "よ"];
+      const leftColumn = ["う", "に"];
+
+      const height = Math.max(rightColumn.length, leftColumn.length);
+
+      const lines = [];
+      lines.push("★┷━┓");
+
+      for (let i = 0; i < height; i++) {
+        const left = leftColumn[i] ?? "\u{3000}";
+        const right = rightColumn[i] ?? "\u{3000}";
+        lines.push(`┃${left}${right}┃`);
+      }
+
+      lines.push("┗━━★");
+
+      return lines.join("\n");
+    }
+
+    function updatePreview() {
+      const text = wishInput.value;
+      formPreview.textContent = `${text}ように`;
+    }
+
+    function updateTanzaku() {
+      const text = wishInput.value;
+      output.textContent = makeTanzaku(text);
+    }
+
+    function selectTanzaku() {
+      const selection = window.getSelection();
+      const range = document.createRange();
+
+      range.selectNodeContents(output);
+
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    async function copyTanzaku() {
+      if (!output.textContent) {
+        updateTanzaku();
+      }
+
+      const text = output.textContent;
+
+      try {
+        await navigator.clipboard.writeText(text);
+        copyStatus.textContent = "コピーしました！";
+      } catch {
+        // navigator.clipboard が使えない環境向けのフォールバック
+        selectTanzaku();
+
+        const succeeded = document.execCommand("copy");
+        copyStatus.textContent = succeeded
+          ? "コピーしました！"
+          : "コピーに失敗しました。選択された短冊を手動でコピーしてください。";
+      }
+    }
+
+    wishInput.addEventListener("input", () => {
+      updatePreview();
+      copyStatus.textContent = "";
+    });
+
+    makeButton.addEventListener("click", () => {
+      updateTanzaku();
+      selectTanzaku();
+      copyStatus.textContent = "短冊を選択しました。Ctrl+C / Cmd+C でもコピーできます。";
+    });
+
+    copyButton.addEventListener("click", copyTanzaku);
+
+    updatePreview();
+  </script>
+</body>
+</html>
