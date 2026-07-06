@@ -71,10 +71,10 @@
   <h1>ブランセうに短冊メーカー</h1>
 
   <label for="wish">願いごと (「ように」は自動挿入されます)</label>
-  <input id="wish" type="text" value="入力例が伝わります" />
+  <input id="wish" type="text" value="私の演技がきちんと伝わります" />
 
   <div class="preview">
-    表示：<span id="formPreview">入力例が伝わりますように</span>
+    表示：<span id="formPreview">私の演技がきちんと伝わりますように</span>
   </div>
 
   <div class="buttonArea">
@@ -116,7 +116,7 @@
       const height = Math.max(rightColumn.length, leftColumn.length);
 
       const lines = [];
-      lines.push("★┷━┓");
+      lines.push("✹┷━┓");
 
       for (let i = 0; i < height; i++) {
         const left = leftColumn[i] ?? "\u{3000}";
@@ -124,7 +124,7 @@
         lines.push(`┃${left}${right}┃`);
       }
 
-      lines.push("┗━━★");
+      lines.push("┗━━✹");
 
       return lines.join("\n");
     }
